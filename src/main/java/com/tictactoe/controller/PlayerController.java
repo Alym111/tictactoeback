@@ -21,8 +21,12 @@ public class PlayerController {
         return service.getAllPlayers();
     }
 
-    @PostMapping("/add")
-    public Player addPlayer(@RequestBody Player player) {
-        return service.addPlayer(player);
+    @PostMapping("/register")
+    public Boolean addPlayer(@RequestBody Player player) {
+        return service.registerPlayer(player);
+    }
+    @PostMapping("/login")
+    public Boolean login(@RequestBody Player player){
+        return service.login(player);
     }
 }
