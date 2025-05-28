@@ -32,11 +32,17 @@ public class PlayerService {
 
     public Boolean login(Player player) {
         Optional<Player> userOptional = repository.findByUsername(player.getUsername());
-        if (userOptional.isPresent()) {
-            Player user = userOptional.get();
-            return user.getPassword().equals(player.getPassword());
+        if (userOptional.isEmpty()) {
+            return false; // User not found
         }
-        return false;
+
+        Player dbPlayer = userOptional.get();
+        // Add this logging for debugging
+        System.out.println("Input password: " + player.getPassword());
+        System.out.println("DB password: " + dbPlayer.getPassword());
+
+        return dbPlayer.getPassword().equals(player.getPassword()); // Temporary!
     }
+
 
 }
