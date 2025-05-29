@@ -1,5 +1,5 @@
 package com.tictactoe.model;
 
 public enum GameStatus {
-    WAITING, IN_PROGRESS, FINISHED
+    WAITING, IN_PROGRESS, REJECTED, FINISHED
 }

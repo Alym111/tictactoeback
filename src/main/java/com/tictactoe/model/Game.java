@@ -12,10 +12,16 @@ public class Game {
     private GameStatus status = GameStatus.WAITING;
     private LocalDateTime createdAt = LocalDateTime.now();
     private int moveCount = 0;
+    private boolean player1WantsRematch = false;
+    private boolean player2WantsRematch = false;
     // Constructors, getters and setters
     public Game() {
         this.gameId = java.util.UUID.randomUUID().toString();
     }
+    public boolean isPlayer1WantsRematch() { return player1WantsRematch; }
+    public void setPlayer1WantsRematch(boolean value) { this.player1WantsRematch = value; }
+    public boolean isPlayer2WantsRematch() { return player2WantsRematch; }
+    public void setPlayer2WantsRematch(boolean value) { this.player2WantsRematch = value; }
 
     public String getGameId() {
         return gameId;
@@ -41,12 +47,18 @@ public class Game {
         this.player2 = player2;
     }
 
-    public char[] getBoard() {
-        return board;
+    public String[] getBoard() {
+        String[] arr = new String[board.length];
+        for (int i = 0; i < board.length; i++) {
+            arr[i] = (board[i] == '\0') ? null : String.valueOf(board[i]);
+        }
+        return arr;
     }
 
-    public void setBoard(char[] board) {
-        this.board = board;
+    public void setBoard(String[] arr) {
+        for (int i = 0; i < board.length; i++) {
+            board[i] = (arr[i] == null || arr[i].isEmpty()) ? '\0' : arr[i].charAt(0);
+        }
     }
 
     public String getCurrentPlayer() {

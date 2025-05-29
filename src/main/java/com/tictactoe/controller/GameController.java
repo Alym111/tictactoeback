@@ -4,11 +4,12 @@ import com.tictactoe.JwtUtil;
 import com.tictactoe.model.Game;
 import com.tictactoe.model.Player;
 import com.tictactoe.service.GameService;
+import com.tictactoe.model.RematchRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,10 +29,12 @@ public class GameController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @PostMapping
     public ResponseEntity<Game> createGame(@RequestBody Player player, HttpServletRequest request) {
         try {
-            // Проверяем JWT
             String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 LOGGER.warning("No valid Authorization header");
@@ -45,7 +48,6 @@ public class GameController {
                 return ResponseEntity.status(401).build();
             }
 
-            // Проверяем, совпадает ли username в теле запроса с токеном
             if (!username.equals(player.getUsername())) {
                 LOGGER.warning("Username mismatch: token=" + username + ", request=" + player.getUsername());
                 return ResponseEntity.status(403).build();
@@ -67,30 +69,38 @@ public class GameController {
     }
 
     @MessageMapping("/game/start")
-    @SendTo("/topic/game/{gameId}")
-    public Game startGame(Player player) {
+    public void startGame(Player player) {
         LOGGER.info("Starting WebSocket game for player: " + player.getUsername());
-        return gameService.startNewGame(player);
+        Game game = gameService.startNewGame(player);
+        messagingTemplate.convertAndSend("/topic/game/" + game.getGameId(), game);
     }
 
     @MessageMapping("/game/join/{gameId}")
-    @SendTo("/topic/game/{gameId}")
-    public Game joinGame(@DestinationVariable String gameId, Player player) {
+    public void joinGame(@DestinationVariable String gameId, Player player) {
         LOGGER.info("Player " + player.getUsername() + " joining game " + gameId);
-        return gameService.joinGame(gameId, player);
+        Game game = gameService.joinGame(gameId, player);
+        messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
     }
 
     @MessageMapping("/game/move")
-    @SendTo("/topic/game/{gameId}")
-    public Game makeMove(Game game) {
+    public void makeMove(Game game) {
         LOGGER.info("Processing move for game " + game.getGameId());
-        return gameService.processMove(game);
+        Game updated = gameService.processMove(game);
+        messagingTemplate.convertAndSend("/topic/game/" + game.getGameId(), updated);
     }
 
     @MessageMapping("/game/restart/{gameId}")
-    @SendTo("/topic/game/{gameId}")
-    public Game restartGame(@DestinationVariable String gameId) {
+    public void restartGame(@DestinationVariable String gameId) {
         LOGGER.info("Restarting game " + gameId);
-        return gameService.restartGame(gameId);
+        Game game = gameService.restartGame(gameId);
+        messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
+    }
+
+    // --- Новый endpoint для rematch ---
+    @MessageMapping("/game/rematch/{gameId}")
+    public void rematch(@DestinationVariable String gameId, RematchRequest request) {
+        LOGGER.info("Rematch request from " + request.getUsername() + " for game " + gameId);
+        Game game = gameService.handleRematchRequest(gameId, request);
+        messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
     }
 }
