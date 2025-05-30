@@ -146,31 +146,22 @@ public class GameService {
     }
     public Game leaveGame(String gameId, Player player) {
         Game game = activeGames.get(gameId);
-        if (game == null) {
-            LOGGER.warning("Game not found: " + gameId);
-            return null;
-        }
+        if (game == null) return null;
+
         boolean isPlayer1 = game.getPlayer1() != null && player.getUsername().equals(game.getPlayer1().getUsername());
         boolean isPlayer2 = game.getPlayer2() != null && player.getUsername().equals(game.getPlayer2().getUsername());
 
         if (isPlayer1) {
-            game.setPlayer1(null);
+            activeGames.remove(gameId);
+            LOGGER.info("leaveGame: Удалили игру " + gameId + ", осталось: " + activeGames.keySet());
+            return null;
         }
         if (isPlayer2) {
             game.setPlayer2(null);
+            game.setStatus(GameStatus.WAITING);
+            LOGGER.info("leaveGame: player2 вышел из игры " + gameId);
+            return game;
         }
-
-        // Если оба вышли — удаляем игру
-        if (game.getPlayer1() == null && game.getPlayer2() == null) {
-            saveGameResult(game);
-            activeGames.remove(gameId);
-            LOGGER.info("Both players left. Game " + gameId + " removed.");
-            return game; // Можно вернуть null, если не хочешь информировать никого
-        }
-
-        // Если кто-то остался — статус ожидания
-        game.setStatus(GameStatus.WAITING);
-        LOGGER.info("Player " + player.getUsername() + " left game " + gameId + ". Waiting for opponent.");
         return game;
     }
 

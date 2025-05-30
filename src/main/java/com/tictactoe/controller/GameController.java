@@ -70,11 +70,11 @@ public class GameController {
     }
     @MessageMapping("/game/leave/{gameId}")
     public void leaveGame(@DestinationVariable String gameId, @RequestBody Player player) {
-        LOGGER.info("Player " + player.getUsername() + " is leaving game " + gameId);
         Game game = gameService.leaveGame(gameId, player);
-        // Оповести обоих игроков о новом состоянии игры
-        messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
-        // Рассылка нового списка доступных игр в лобби
+
+        if (game != null) {
+            messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
+        }
         messagingTemplate.convertAndSend("/topic/games", gameService.getAvailableGames());
     }
 
