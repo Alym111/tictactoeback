@@ -139,6 +139,34 @@ public class GameService {
 
         return game;
     }
+    public Game leaveGame(String gameId, Player player) {
+        Game game = activeGames.get(gameId);
+        if (game == null) {
+            LOGGER.warning("Game not found: " + gameId);
+            return null;
+        }
+        boolean isPlayer1 = game.getPlayer1() != null && player.getUsername().equals(game.getPlayer1().getUsername());
+        boolean isPlayer2 = game.getPlayer2() != null && player.getUsername().equals(game.getPlayer2().getUsername());
+
+        if (isPlayer1) {
+            game.setPlayer1(null);
+        }
+        if (isPlayer2) {
+            game.setPlayer2(null);
+        }
+
+        // Если оба вышли — удаляем игру
+        if (game.getPlayer1() == null && game.getPlayer2() == null) {
+            activeGames.remove(gameId);
+            LOGGER.info("Both players left. Game " + gameId + " removed.");
+            return game; // Можно вернуть null, если не хочешь информировать никого
+        }
+
+        // Если кто-то остался — статус ожидания
+        game.setStatus(GameStatus.WAITING);
+        LOGGER.info("Player " + player.getUsername() + " left game " + gameId + ". Waiting for opponent.");
+        return game;
+    }
 
     public Game restartGame(String gameId) {
         Game game = activeGames.get(gameId);
@@ -151,6 +179,8 @@ public class GameService {
         game.setMoveCount(0);
         game.setCurrentPlayer(game.getPlayer1().getUsername());
         game.setStatus(GameStatus.IN_PROGRESS);
+        game.setPlayer1WantsRematch(false);
+        game.setPlayer2WantsRematch(false);
         return game;
     }
 

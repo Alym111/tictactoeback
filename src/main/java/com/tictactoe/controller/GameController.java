@@ -55,6 +55,7 @@ public class GameController {
 
             LOGGER.info("Creating game for player: " + username);
             Game game = gameService.startNewGame(player);
+            messagingTemplate.convertAndSend("/topic/games", gameService.getAvailableGames());
             return ResponseEntity.ok(game);
         } catch (Exception e) {
             LOGGER.severe("Error creating game: " + e.getMessage());
@@ -66,6 +67,15 @@ public class GameController {
     public List<Game> getAvailableGames() {
         LOGGER.info("Fetching available games");
         return gameService.getAvailableGames();
+    }
+    @MessageMapping("/game/leave/{gameId}")
+    public void leaveGame(@DestinationVariable String gameId, @RequestBody Player player) {
+        LOGGER.info("Player " + player.getUsername() + " is leaving game " + gameId);
+        Game game = gameService.leaveGame(gameId, player);
+        // Оповести обоих игроков о новом состоянии игры
+        messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
+        // Рассылка нового списка доступных игр в лобби
+        messagingTemplate.convertAndSend("/topic/games", gameService.getAvailableGames());
     }
 
     @MessageMapping("/game/start")
@@ -80,6 +90,7 @@ public class GameController {
         LOGGER.info("Player " + player.getUsername() + " joining game " + gameId);
         Game game = gameService.joinGame(gameId, player);
         messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
+        messagingTemplate.convertAndSend("/topic/games", gameService.getAvailableGames());
     }
 
     @MessageMapping("/game/move")
