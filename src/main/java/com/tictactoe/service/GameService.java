@@ -1,9 +1,8 @@
 package com.tictactoe.service;
 
-import com.tictactoe.model.Game;
-import com.tictactoe.model.GameStatus;
-import com.tictactoe.model.Player;
-import com.tictactoe.model.RematchRequest;
+import com.tictactoe.model.*;
+import com.tictactoe.repository.GameResultRepo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -17,6 +16,9 @@ public class GameService {
 
     private static final Logger LOGGER = Logger.getLogger(GameService.class.getName());
     private Map<String, Game> activeGames = new HashMap<>();
+
+    @Autowired
+    private GameResultRepo gameResultRepo;
 
     public Game startNewGame(Player player) {
         if (player == null || player.getUsername() == null) {
@@ -79,6 +81,9 @@ public class GameService {
         activeGame.setMoveCount(activeGame.getMoveCount() + 1);
         if (activeGame.getMoveCount() >= 9 && activeGame.getWinner() == null) {
             activeGame.setStatus(GameStatus.FINISHED);
+        }
+        if (activeGame.getStatus() == GameStatus.FINISHED) {
+            saveGameResult(activeGame);
         }
 
         activeGame.setCurrentPlayer(
@@ -157,6 +162,7 @@ public class GameService {
 
         // Если оба вышли — удаляем игру
         if (game.getPlayer1() == null && game.getPlayer2() == null) {
+            saveGameResult(game);
             activeGames.remove(gameId);
             LOGGER.info("Both players left. Game " + gameId + " removed.");
             return game; // Можно вернуть null, если не хочешь информировать никого
@@ -182,6 +188,15 @@ public class GameService {
         game.setPlayer1WantsRematch(false);
         game.setPlayer2WantsRematch(false);
         return game;
+    }
+    public void saveGameResult(Game game) {
+        GameResult result = new GameResult();
+        result.setGameId(game.getGameId());
+        result.setPlayer1(game.getPlayer1() != null ? game.getPlayer1().getUsername() : null);
+        result.setPlayer2(game.getPlayer2() != null ? game.getPlayer2().getUsername() : null);
+        result.setWinner(game.getWinner()); // null если ничья/оба вышли
+        result.setFinishedAt(java.time.LocalDateTime.now());
+        gameResultRepo.save(result);
     }
 
     private boolean checkWinner(String[] board, String symbol) {
