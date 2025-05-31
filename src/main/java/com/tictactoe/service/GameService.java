@@ -157,10 +157,23 @@ public class GameService {
             return null;
         }
         if (isPlayer2) {
-            game.setPlayer2(null);
-            game.setStatus(GameStatus.WAITING);
-            LOGGER.info("leaveGame: player2 вышел из игры " + gameId);
-            return game;
+            if (game.getStatus() == GameStatus.FINISHED) {
+                game.setPlayer2(null);
+                game.setBoard(new String[9]);
+                game.setWinner(null);
+                game.setMoveCount(0);
+                game.setCurrentPlayer(game.getPlayer1().getUsername());
+                game.setStatus(GameStatus.WAITING);
+                game.setPlayer1WantsRematch(false);
+                game.setPlayer2WantsRematch(false);
+                LOGGER.info("leaveGame: player2 вышел после окончания, игра сброшена " + gameId);
+                return game;
+            } else {
+                game.setPlayer2(null);
+                game.setStatus(GameStatus.WAITING);
+                LOGGER.info("leaveGame: player2 вышел из игры " + gameId);
+                return game;
+            }
         }
         return game;
     }

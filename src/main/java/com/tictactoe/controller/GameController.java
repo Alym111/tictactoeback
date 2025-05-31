@@ -74,6 +74,8 @@ public class GameController {
 
         if (game != null) {
             messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
+        }else {
+            messagingTemplate.convertAndSend("/topic/game/" + gameId, "{\"deleted\":true}");
         }
         messagingTemplate.convertAndSend("/topic/games", gameService.getAvailableGames());
     }
