@@ -3,6 +3,7 @@ package com.tictactoe.controller;
 import com.tictactoe.JwtUtil;
 import com.tictactoe.model.Game;
 import com.tictactoe.model.Player;
+import com.tictactoe.model.PlayerStatistics;
 import com.tictactoe.service.GameService;
 import com.tictactoe.model.RematchRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,27 @@ public class GameController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @GetMapping("/stats/{username}")
+    public ResponseEntity<PlayerStatistics> getPlayerStatistics(@PathVariable String username) {
+        try {
+            PlayerStatistics stats = gameService.getPlayerStatistics(username);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<List<PlayerStatistics>> getAllPlayersStatistics() {
+        try {
+            List<PlayerStatistics> stats = gameService.getAllPlayersStatistics();
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
 
     @PostMapping
     public ResponseEntity<Game> createGame(@RequestBody Player player, HttpServletRequest request) {

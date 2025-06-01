@@ -5,9 +5,7 @@ import com.tictactoe.repository.GameResultRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
@@ -144,6 +142,60 @@ public class GameService {
 
         return game;
     }
+    public PlayerStatistics getPlayerStatistics(String username) {
+        List<GameResult> results = gameResultRepo.findAllByPlayer(username);
+
+        int totalGames = results.size();
+        int wins = 0;
+        int draws = 0;
+        int losses = 0;
+
+        int maxWinStreak = 0;
+        int currentWinStreak = 0;
+        int tempStreak = 0;
+        results.sort(Comparator.comparing(GameResult::getFinishedAt));
+
+        for (GameResult gr : results) {
+            boolean isWin = gr.getWinner() != null && gr.getWinner().equals(username);
+            boolean isDraw = gr.getWinner() == null;
+            if (isWin) {
+                wins++;
+                tempStreak++;
+                if (tempStreak > maxWinStreak) {
+                    maxWinStreak = tempStreak;
+                }
+            } else {
+                if (isDraw) draws++;
+                else losses++;
+                tempStreak = 0; // прерываем серию
+            }
+        }
+        currentWinStreak = 0;
+        for (int i = results.size() - 1; i >= 0; i--) {
+            GameResult gr = results.get(i);
+            boolean isWin = gr.getWinner() != null && gr.getWinner().equals(username);
+            if (isWin) currentWinStreak++;
+            else break;
+        }
+
+        return new PlayerStatistics(username, totalGames, wins, losses, draws, currentWinStreak, maxWinStreak);
+    }
+    public List<PlayerStatistics> getAllPlayersStatistics() {
+        // Предполагается, что у тебя есть метод, который вернёт всех уникальных игроков
+        List<String> usernames = gameResultRepo.findAllDistinctPlayers();
+
+        List<PlayerStatistics> statsList = new ArrayList<>();
+        for (String username : usernames) {
+            PlayerStatistics stats = getPlayerStatistics(username);
+            statsList.add(stats);
+        }
+
+        // Сортируем по maxWinStreak по убыванию
+        statsList.sort((a, b) -> Integer.compare(b.getMaxWinStreak(), a.getMaxWinStreak()));
+
+        return statsList;
+    }
+
     public Game leaveGame(String gameId, Player player) {
         Game game = activeGames.get(gameId);
         if (game == null) return null;
