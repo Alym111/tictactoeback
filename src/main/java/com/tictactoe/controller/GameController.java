@@ -130,8 +130,7 @@ public class GameController {
         Game game = gameService.restartGame(gameId);
         messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
     }
-
-    // --- Новый endpoint для rematch ---
+    
     @MessageMapping("/game/rematch/{gameId}")
     public void rematch(@DestinationVariable String gameId, RematchRequest request) {
         LOGGER.info("Rematch request from " + request.getUsername() + " for game " + gameId);

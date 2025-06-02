@@ -100,7 +100,6 @@ public class PlayerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Новый метод — удалить пользователя по id
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePlayerById(@PathVariable Long id) {
         boolean deleted = playerService.deletePlayerById(id);

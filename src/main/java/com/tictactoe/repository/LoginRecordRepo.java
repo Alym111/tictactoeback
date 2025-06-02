@@ -12,6 +12,5 @@ public interface LoginRecordRepo extends JpaRepository<LoginRecord, Long> {
     @Query(value = "SELECT DATE(login_time) as login_date, COUNT(DISTINCT player_id) FROM login_record GROUP BY DATE(login_time)", nativeQuery = true)
     List<Object[]> countUniqueLoginsByDate();
 
-    // Или метод для получения всех записей по пользователю
     List<LoginRecord> findByPlayerId(Long playerId);
 }

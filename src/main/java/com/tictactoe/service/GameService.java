@@ -24,7 +24,6 @@ public class GameService {
             throw new IllegalArgumentException("Player data is invalid");
         }
 
-        // ПОИСК уже ожидающей игры для этого пользователя
         for (Game game : activeGames.values()) {
             if (game.getPlayer1() != null
                     && game.getPlayer1().getUsername().equals(player.getUsername())
@@ -35,7 +34,6 @@ public class GameService {
             }
         }
 
-        // Если такой нет — создаём новую
         LOGGER.info("Starting new game for player: " + player.getUsername());
         Game game = new Game();
         game.setPlayer1(player);
@@ -115,7 +113,6 @@ public class GameService {
             return null;
         }
 
-        // Устанавливаем флаги согласия на рематч
         if (game.getPlayer1() != null && request.getUsername().equals(game.getPlayer1().getUsername())) {
             game.setPlayer1WantsRematch(request.isAgree());
         }
@@ -123,18 +120,16 @@ public class GameService {
             game.setPlayer2WantsRematch(request.isAgree());
         }
 
-        // Если кто-то отказался — статус REJECTED
         if (!request.isAgree()) {
             game.setPlayer1WantsRematch(false);
             game.setPlayer2WantsRematch(false);
-            game.setStatus(GameStatus.REJECTED); // Добавь такой статус в Enum
+            game.setStatus(GameStatus.REJECTED);
             LOGGER.info("Rematch rejected by " + request.getUsername());
             return game;
         }
 
-        // Если оба согласились — рестарт игры
         if (game.isPlayer1WantsRematch() && game.isPlayer2WantsRematch()) {
-            restartGame(gameId); // этот метод должен сбрасывать поле, победителя и т.д.
+            restartGame(gameId);
             game.setPlayer1WantsRematch(false);
             game.setPlayer2WantsRematch(false);
             LOGGER.info("Rematch accepted by both players, restarting game " + gameId);
@@ -167,7 +162,7 @@ public class GameService {
             } else {
                 if (isDraw) draws++;
                 else losses++;
-                tempStreak = 0; // прерываем серию
+                tempStreak = 0;
             }
         }
         currentWinStreak = 0;
@@ -181,7 +176,6 @@ public class GameService {
         return new PlayerStatistics(username, totalGames, wins, losses, draws, currentWinStreak, maxWinStreak);
     }
     public List<PlayerStatistics> getAllPlayersStatistics() {
-        // Предполагается, что у тебя есть метод, который вернёт всех уникальных игроков
         List<String> usernames = gameResultRepo.findAllDistinctPlayers();
 
         List<PlayerStatistics> statsList = new ArrayList<>();
@@ -190,7 +184,6 @@ public class GameService {
             statsList.add(stats);
         }
 
-        // Сортируем по maxWinStreak по убыванию
         statsList.sort((a, b) -> Integer.compare(b.getMaxWinStreak(), a.getMaxWinStreak()));
 
         return statsList;
@@ -250,7 +243,7 @@ public class GameService {
         result.setGameId(game.getGameId());
         result.setPlayer1(game.getPlayer1() != null ? game.getPlayer1().getUsername() : null);
         result.setPlayer2(game.getPlayer2() != null ? game.getPlayer2().getUsername() : null);
-        result.setWinner(game.getWinner()); // null если ничья/оба вышли
+        result.setWinner(game.getWinner());
         result.setFinishedAt(java.time.LocalDateTime.now());
         gameResultRepo.save(result);
     }

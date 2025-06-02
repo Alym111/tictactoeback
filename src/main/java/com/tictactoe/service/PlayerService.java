@@ -75,16 +75,14 @@ public class PlayerService {
     public Boolean login(Player player) {
         Optional<Player> userOptional = repository.findByUsername(player.getUsername());
         if (userOptional.isEmpty()) {
-            return false; // User not found
+            return false;
         }
 
         Player dbPlayer = userOptional.get();
-        // Add this logging for debugging
         System.out.println("Input password: " + player.getPassword());
         System.out.println("DB password: " + dbPlayer.getPassword());
 
         if (dbPlayer.getPassword().equals(player.getPassword())) {
-            // Сохраняем запись входа
             LoginRecord loginRecord = new LoginRecord(dbPlayer, LocalDateTime.now());
             loginRecordRepo.save(loginRecord);
 
