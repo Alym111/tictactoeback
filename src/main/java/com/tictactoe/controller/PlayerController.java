@@ -1,5 +1,6 @@
 package com.tictactoe.controller;
 
+import com.tictactoe.model.LoginCountByDateDto;
 import com.tictactoe.model.Player;
 import com.tictactoe.service.PlayerService;
 import com.tictactoe.JwtUtil;
@@ -7,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -82,5 +85,30 @@ public class PlayerController {
     public List<Player> getAllPlayers() {
         LOGGER.info("Fetching all players");
         return playerService.getAllPlayers();
+    }
+    @GetMapping("/logins/count-by-date")
+    public ResponseEntity<List<LoginCountByDateDto>> getLoginCountsByDate() {
+        List<LoginCountByDateDto> response = playerService.getLoginCountsByDate();
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Player> getPlayerById(@PathVariable Long id) {
+        return playerService.getPlayerById(id)
+                .map(player -> ResponseEntity.ok(player))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePlayerById(@PathVariable Long id) {
+        boolean deleted = playerService.deletePlayerById(id);
+        if (deleted) {
+            LOGGER.info("Deleted player with id: " + id);
+            return ResponseEntity.noContent().build();
+        } else {
+            LOGGER.warning("Player not found for deletion with id: " + id);
+            return ResponseEntity.notFound().build();
+        }
     }
 }

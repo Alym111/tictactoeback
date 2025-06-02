@@ -3,6 +3,7 @@ package com.tictactoe.controller;
 import com.tictactoe.JwtUtil;
 import com.tictactoe.model.Game;
 import com.tictactoe.model.Player;
+import com.tictactoe.model.PlayerStatistics;
 import com.tictactoe.service.GameService;
 import com.tictactoe.model.RematchRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,27 @@ public class GameController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @GetMapping("/stats/{username}")
+    public ResponseEntity<PlayerStatistics> getPlayerStatistics(@PathVariable String username) {
+        try {
+            PlayerStatistics stats = gameService.getPlayerStatistics(username);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<List<PlayerStatistics>> getAllPlayersStatistics() {
+        try {
+            List<PlayerStatistics> stats = gameService.getAllPlayersStatistics();
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
 
     @PostMapping
     public ResponseEntity<Game> createGame(@RequestBody Player player, HttpServletRequest request) {
@@ -70,11 +92,13 @@ public class GameController {
     }
     @MessageMapping("/game/leave/{gameId}")
     public void leaveGame(@DestinationVariable String gameId, @RequestBody Player player) {
-        LOGGER.info("Player " + player.getUsername() + " is leaving game " + gameId);
         Game game = gameService.leaveGame(gameId, player);
-        // Оповести обоих игроков о новом состоянии игры
-        messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
-        // Рассылка нового списка доступных игр в лобби
+
+        if (game != null) {
+            messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
+        }else {
+            messagingTemplate.convertAndSend("/topic/game/" + gameId, "{\"deleted\":true}");
+        }
         messagingTemplate.convertAndSend("/topic/games", gameService.getAvailableGames());
     }
 
@@ -106,8 +130,7 @@ public class GameController {
         Game game = gameService.restartGame(gameId);
         messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
     }
-
-    // --- Новый endpoint для rematch ---
+    
     @MessageMapping("/game/rematch/{gameId}")
     public void rematch(@DestinationVariable String gameId, RematchRequest request) {
         LOGGER.info("Rematch request from " + request.getUsername() + " for game " + gameId);
